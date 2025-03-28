@@ -708,6 +708,9 @@ int8_t FTPServer::processCommand()
           bytesTransfered = 0;
           if (allocateBuffer())
           {
+            // NEW: Store the file name and indicate a successful transfer is in progress.
+            _currentFileName = path;
+            _transferSuccessful = true;
             FTP_DEBUG_MSG("Receiving file '%s' => %s", parameters.c_str(), path.c_str());
             sendMessage_P(150, PSTR("Connected to port %d"), dataPort);
           }
@@ -931,6 +934,12 @@ void FTPServer::closeTransfer()
   else
     sendMessage_P(226, PSTR("File successfully transferred"));
 
+  // NEW: Call the callback only for a STOR command when the transfer was successful.
+  if (transferState == tStore && _transferSuccessful && _onFileSavedCallback != NULL)
+  {
+      _onFileSavedCallback(_currentFileName);
+  }
+  
   FTPCommon::closeTransfer();
 }
 
@@ -942,6 +951,8 @@ void FTPServer::abortTransfer()
     data.stop();
     sendMessage_P(426, PSTR("Transfer aborted"));
   }
+  // Mark the transfer as unsuccessful.
+  _transferSuccessful = false;
   freeBuffer();
   transferState = tIdle;
 }

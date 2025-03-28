@@ -49,6 +49,11 @@ public:
   // to process ftp requests
   void handleFTP();
 
+  // Register a callback that gets called after a successful STOR operation.
+  void onFileSaved(void (*callback)(const String &filename)) {
+    _onFileSavedCallback = callback;
+  }
+
 private:
   enum internalState
   {
@@ -64,6 +69,13 @@ private:
     tRetrieve,
     tStore
   };
+
+  // Callback to be called after a successful file save.
+  void (*_onFileSavedCallback)(const String &filename) = NULL;
+  // Store the file name for the ongoing transfer.
+  String _currentFileName;
+  // Flag to indicate that the transfer is proceeding successfully.
+  bool _transferSuccessful = false;
 
   void iniVariables();
   void disconnectClient(bool gracious = true);
